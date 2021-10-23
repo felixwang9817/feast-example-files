@@ -1,0 +1,84 @@
+$ feast apply
+10/07/2021 03:57:26 PM INFO:Pulling remote image feastdev/feature-server:aws:
+10/07/2021 03:57:28 PM INFO:Creating remote ECR repository feast-python-server-key_shark-0_13_1_dev23_gb3c08320:
+10/07/2021 03:57:29 PM INFO:Pushing local image to remote {aws_account}.dkr.ecr.us-west-2.amazonaws.com/feast-python-server-key_shark-0_13_1_dev23_gb3c08320:0_13_1_dev23_gb3c08320:
+10/07/2021 03:58:44 PM INFO:Deploying feature server...
+10/07/2021 03:58:45 PM INFO:  Creating AWS Lambda...
+10/07/2021 03:58:46 PM INFO:  Creating AWS API Gateway...
+Registered entity driver_id
+Registered feature view driver_hourly_stats
+Deploying infrastructure for driver_hourly_stats
+
+$ feast endpoint
+10/07/2021 03:59:01 PM INFO:Feature server endpoint: https://hkosgmz4m2.execute-api.us-west-2.amazonaws.com
+
+$ feast materialize-incremental $(date +%Y-%m-%d)
+Materializing 1 feature views to 2021-10-06 17:00:00-07:00 into the dynamodb online store.
+
+driver_hourly_stats from 2020-10-08 23:01:34-07:00 to 2021-10-06 17:00:00-07:00:
+100%|█████████████████████████████████████████████████████████████████| 5/5 [00:00<00:00, 16.89it/s]
+
+$ curl -X POST \                                 
+    "https://hkosgmz4m2.execute-api.us-west-2.amazonaws.com/get-online-features" \
+    -H "Content-type: application/json" \
+    -H "Accept: application/json" \
+    -d '{
+        "features": [
+            "driver_hourly_stats:conv_rate",
+            "driver_hourly_stats:acc_rate",
+            "driver_hourly_stats:avg_daily_trips"
+        ],
+        "entities": {
+            "driver_id": [1001, 1002, 1003]
+        },
+        "full_feature_names": true
+    }' | jq
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1346  100  1055  100   291   3436    947 --:--:-- --:--:-- --:--:--  4370
+{
+  "field_values": [
+    {
+      "fields": {
+        "driver_id": 1001,
+        "driver_hourly_stats__conv_rate": 0.025330161675810814,
+        "driver_hourly_stats__avg_daily_trips": 785,
+        "driver_hourly_stats__acc_rate": 0.835975170135498
+      },
+      "statuses": {
+        "driver_hourly_stats__avg_daily_trips": "PRESENT",
+        "driver_id": "PRESENT",
+        "driver_hourly_stats__conv_rate": "PRESENT",
+        "driver_hourly_stats__acc_rate": "PRESENT"
+      }
+    },
+    {
+      "fields": {
+        "driver_hourly_stats__conv_rate": 0.7595187425613403,
+        "driver_hourly_stats__acc_rate": 0.1740121990442276,
+        "driver_id": 1002,
+        "driver_hourly_stats__avg_daily_trips": 875
+      },
+      "statuses": {
+        "driver_hourly_stats__acc_rate": "PRESENT",
+        "driver_id": "PRESENT",
+        "driver_hourly_stats__avg_daily_trips": "PRESENT",
+        "driver_hourly_stats__conv_rate": "PRESENT"
+      }
+    },
+    {
+      "fields": {
+        "driver_hourly_stats__acc_rate": 0.7785481214523315,
+        "driver_hourly_stats__conv_rate": 0.33832859992980957,
+        "driver_hourly_stats__avg_daily_trips": 846,
+        "driver_id": 1003
+      },
+      "statuses": {
+        "driver_id": "PRESENT",
+        "driver_hourly_stats__conv_rate": "PRESENT",
+        "driver_hourly_stats__acc_rate": "PRESENT",
+        "driver_hourly_stats__avg_daily_trips": "PRESENT"
+      }
+    }
+  ]
+}
